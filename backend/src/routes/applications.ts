@@ -1,17 +1,16 @@
 import { Router } from "express";
-import { requireAuth } from "../auth.js";
-import type { Config } from "../config.js";
+import { currentUser, requireAuth } from "../auth.js";
+import { formatCalendarDate } from "../calendarDate.js";
+import type { AppDeps } from "../createApp.js";
 import { HttpError } from "../errors.js";
+import { newApplication } from "../newApplication.js";
 import {
   createApplicationSchema,
   idSchema,
   listApplicationsQuerySchema,
   updateApplicationSchema,
 } from "../schemas.js";
-import type { Application, Store } from "../store.js";
-import { localDate } from "../today.js";
-
-type Deps = { config: Config; store: Store };
+import type { Application } from "../store.js";
 
 function toJson(application: Application) {
   return {
@@ -21,7 +20,7 @@ function toJson(application: Application) {
     link: application.link,
     status: application.status,
     // A calendar date, not a moment in time: "2026-11-15".
-    appliedAt: application.appliedAt.toISOString().slice(0, 10),
+    appliedAt: formatCalendarDate(application.appliedAt),
     notes: application.notes,
     createdAt: application.createdAt.toISOString(),
     updatedAt: application.updatedAt.toISOString(),
@@ -43,29 +42,27 @@ function notFound(): HttpError {
   return new HttpError(404, "Application not found");
 }
 
-export function applicationsRouter({ config, store }: Deps): Router {
+export function applicationsRouter({ config, store }: Pick<AppDeps, "config" | "store">): Router {
   const router = Router();
 
-  // Everything below needs a login, and uses res.locals.userId in every query.
-  router.use(requireAuth(config));
+  // Everything below needs a login, and passes currentUser(res).id to every
+  // store call.
+  router.use(requireAuth(config, store));
 
   router.get("/", async (req, res) => {
     const { status } = listApplicationsQuerySchema.parse(req.query);
-    const applications = await store.listApplications(res.locals.userId, status);
+    const applications = await store.listApplications(currentUser(res).id, status);
     res.json({ applications: applications.map(toJson) });
   });
 
   router.post("/", async (req, res) => {
-    const data = createApplicationSchema.parse(req.body);
-    const application = await store.createApplication(res.locals.userId, {
-      ...data,
-      appliedAt: data.appliedAt ?? new Date(localDate()),
-    });
+    const input = createApplicationSchema.parse(req.body);
+    const application = await store.createApplication(currentUser(res).id, newApplication(input));
     res.status(201).json({ application: toJson(application) });
   });
 
   router.get("/:id", async (req, res) => {
-    const application = await store.getApplication(res.locals.userId, parseId(req.params.id));
+    const application = await store.getApplication(currentUser(res).id, parseId(req.params.id));
     if (!application) {
       throw notFound();
     }
@@ -75,7 +72,7 @@ export function applicationsRouter({ config, store }: Deps): Router {
   router.patch("/:id", async (req, res) => {
     const id = parseId(req.params.id);
     const changes = updateApplicationSchema.parse(req.body);
-    const application = await store.updateApplication(res.locals.userId, id, changes);
+    const application = await store.updateApplication(currentUser(res).id, id, changes);
     if (!application) {
       throw notFound();
     }
@@ -83,7 +80,7 @@ export function applicationsRouter({ config, store }: Deps): Router {
   });
 
   router.delete("/:id", async (req, res) => {
-    const deleted = await store.deleteApplication(res.locals.userId, parseId(req.params.id));
+    const deleted = await store.deleteApplication(currentUser(res).id, parseId(req.params.id));
     if (!deleted) {
       throw notFound();
     }

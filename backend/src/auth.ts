@@ -1,9 +1,9 @@
-import type { CookieOptions, RequestHandler } from "express";
+import type { CookieOptions, RequestHandler, Response } from "express";
 import { OAuth2Client } from "google-auth-library";
 import jwt from "jsonwebtoken";
 import type { Config } from "./config.js";
 import { HttpError } from "./errors.js";
-import type { GoogleProfile } from "./store.js";
+import type { GoogleProfile, Store, User } from "./store.js";
 
 export const SESSION_COOKIE = "session";
 const SESSION_DAYS = 7;
@@ -66,15 +66,40 @@ export function sessionCookieOptions(config: Config): CookieOptions {
 
 export const SESSION_MAX_AGE_MS = SESSION_DAYS * 24 * 60 * 60 * 1000;
 
-// Routes behind this middleware read the user from res.locals.userId. The id
-// comes from the signed cookie only, never from the request body or URL.
-export function requireAuth(config: Config): RequestHandler {
-  return (req, res, next) => {
+// A session is valid only while its user exists (J23): a correctly signed
+// cookie is not enough once the account has been deleted. That costs one
+// primary-key lookup per request.
+export function requireAuth(config: Config, store: Store): RequestHandler {
+  return async (req, res, next) => {
     const userId = verifySession(req.cookies?.[SESSION_COOKIE], config.jwtSecret);
-    if (!userId) {
+    const user = userId ? await store.findUser(userId) : null;
+    if (!user) {
+      res.clearCookie(SESSION_COOKIE, sessionCookieOptions(config));
       throw new HttpError(401, "Not logged in");
     }
-    res.locals.userId = userId;
+    res.locals.user = user;
     next();
   };
+}
+
+// The only way a route learns who is logged in. Express types res.locals as
+// `any`, so reading it directly would let a missing user slip through as
+// `undefined`, and Prisma treats `where: { userId: undefined }` as "no
+// filter": every user's rows. This fails closed instead: a route that isn't
+// behind requireAuth gets a 401, never an unscoped query.
+export function currentUser(res: Response): User {
+  const user: unknown = res.locals.user;
+  if (!isUser(user)) {
+    throw new HttpError(401, "Not logged in");
+  }
+  return user;
+}
+
+function isUser(value: unknown): value is User {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as User).id === "string" &&
+    (value as User).id.length > 0
+  );
 }

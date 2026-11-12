@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import type { Application, Store, User } from "../store.js";
 
 // A Store that keeps everything in arrays, so route tests run without a
-// database. It follows the same rules as src/prismaStore.ts: defaults for
-// status and appliedAt, newest first, and every lookup matched on userId.
+// database. It follows the same rules as src/prismaStore.ts: newest first,
+// and every lookup matched on userId.
 export function createMemoryStore(): Store {
   const users: User[] = [];
   let applications: Application[] = [];
@@ -45,14 +45,9 @@ export function createMemoryStore(): Store {
     async createApplication(userId, data) {
       const now = new Date();
       const application: Application = {
+        ...data,
         id: randomUUID(),
         userId,
-        company: data.company,
-        role: data.role,
-        link: data.link ?? null,
-        status: data.status ?? "APPLIED",
-        appliedAt: data.appliedAt ?? new Date(now.toISOString().slice(0, 10)),
-        notes: data.notes ?? null,
         createdAt: now,
         updatedAt: now,
       };

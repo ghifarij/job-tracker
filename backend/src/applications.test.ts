@@ -1,7 +1,7 @@
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { createTestApp, loginAs } from "./test/testApp.js";
-import { localDate } from "./today.js";
+import { formatCalendarDate, today } from "./calendarDate.js";
 
 const job = { company: "Tokopedia", role: "Backend Engineer" };
 
@@ -20,7 +20,7 @@ describe("applications need a login", () => {
 });
 
 describe("POST /api/applications", () => {
-  it("creates an application with defaults for the optional fields", async () => {
+  it("fills in the optional fields that are left out", async () => {
     const ana = await loginAs(createTestApp(), "ana");
 
     const res = await ana.post("/api/applications").send(job);
@@ -31,7 +31,7 @@ describe("POST /api/applications", () => {
       role: "Backend Engineer",
       link: null,
       status: "APPLIED",
-      appliedAt: localDate(),
+      appliedAt: formatCalendarDate(today()),
       notes: null,
     });
     expect(res.body.application).not.toHaveProperty("userId");
@@ -228,13 +228,5 @@ describe("each user sees only their own applications", () => {
 
     await ana.get(url).expect(200);
     await budi.get(url).expect(404);
-  });
-});
-
-describe("localDate", () => {
-  it("is already the next day in Jakarta late in the UTC evening", () => {
-    // 23:30 UTC on the 14th is 06:30 on the 15th in Jakarta (UTC+7).
-    expect(localDate(new Date("2026-11-14T23:30:00Z"))).toBe("2026-11-15");
-    expect(localDate(new Date("2026-11-14T16:59:00Z"))).toBe("2026-11-14");
   });
 });

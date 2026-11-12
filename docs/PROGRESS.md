@@ -21,7 +21,7 @@ Status legend: ⬜ todo · 🟡 in progress · ✅ done · ⛔ blocked
 - ⬜ README final pass with the live link
 
 ## Backend build (Claude, 2026-11-12)
-Built in the order of the handoff: Prisma schema + first migration → Google ID-token verification → JWT cookie + auth middleware → zod validation + error handler → applications CRUD + status filter → 42 tests (`npm test`, no database needed).
+Built in the order of the handoff: Prisma schema + first migration → Google ID-token verification → JWT cookie + auth middleware → zod validation + error handler → applications CRUD + status filter → tests (`npm test`, no database needed).
 
 API, all under `/api` (the frontend rewrite keeps the path unchanged):
 - `POST /api/auth/google` `{ credential }` → sets the `session` cookie, returns `{ user }`
@@ -39,6 +39,13 @@ Environment variables (I set the values myself):
 - `frontend/.env.local`: `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `BACKEND_URL` (`http://localhost:4000` locally; the rewrite target)
 
 The choices Claude made while building were confirmed or changed by me on 2026-11-12: J15–J21 in `DECISIONS.md`.
+
+## Architecture review (Claude, 2026-11-12)
+Reviewed the backend before starting the frontend; I picked candidates 1 and 2 (J22, J23).
+- ✅ New-application rules in `src/newApplication.ts`; calendar dates in `src/calendarDate.ts`; the stores no longer hold defaults
+- ✅ `currentUser(res)` is the only way a route reads the logged-in user; the login check confirms the user still exists
+- ⬜ Apply the second migration (drops the two database defaults): `cd backend && npm run db:deploy` (me)
+- Not done, on purpose: writing the JSON shapes down in one types file (candidate 3; worth doing when the frontend starts) and running the store tests against Postgres (candidate 4; contradicts J20)
 
 ## Next session: build the frontend
 Login page with the Google button → rewrite `/api/*` to `BACKEND_URL` → applications list with status filter → add / edit / delete forms.

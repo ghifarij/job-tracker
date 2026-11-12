@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseCalendarDate } from "./calendarDate.js";
 import { STATUSES } from "./store.js";
 
 export const googleLoginSchema = z.object({
@@ -14,7 +15,7 @@ const applicationFields = {
   link: z.httpUrl().max(2000).nullable(),
   status: z.enum(STATUSES),
   // A calendar date, "2026-11-15". Stored in a Postgres DATE column.
-  appliedAt: z.iso.date().transform((date) => new Date(date)),
+  appliedAt: z.iso.date().transform(parseCalendarDate),
   notes: z.string().trim().max(5000).nullable(),
 };
 
@@ -27,6 +28,10 @@ export const createApplicationSchema = z.object({
   appliedAt: applicationFields.appliedAt.optional(),
   notes: applicationFields.notes.optional(),
 });
+
+// What a create request holds after validation: the optional fields may be
+// missing. src/newApplication.ts turns this into a complete record.
+export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;
 
 export const updateApplicationSchema = z
   .object(applicationFields)

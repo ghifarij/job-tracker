@@ -1,24 +1,22 @@
 import { Router } from "express";
 import {
-  type GoogleVerifier,
+  currentUser,
   requireAuth,
   SESSION_COOKIE,
   SESSION_MAX_AGE_MS,
   sessionCookieOptions,
   signSession,
 } from "../auth.js";
-import type { Config } from "../config.js";
+import type { AppDeps } from "../createApp.js";
 import { HttpError } from "../errors.js";
 import { googleLoginSchema } from "../schemas.js";
-import type { Store, User } from "../store.js";
-
-type Deps = { config: Config; store: Store; verifyGoogleToken: GoogleVerifier };
+import type { User } from "../store.js";
 
 function toJson(user: User) {
   return { id: user.id, email: user.email, name: user.name };
 }
 
-export function authRouter({ config, store, verifyGoogleToken }: Deps): Router {
+export function authRouter({ config, store, verifyGoogleToken }: AppDeps): Router {
   const router = Router();
   const cookieOptions = sessionCookieOptions(config);
 
@@ -45,14 +43,8 @@ export function authRouter({ config, store, verifyGoogleToken }: Deps): Router {
     res.status(204).end();
   });
 
-  router.get("/me", requireAuth(config), async (_req, res) => {
-    const user = await store.findUser(res.locals.userId);
-    if (!user) {
-      // A valid cookie for a user that no longer exists.
-      res.clearCookie(SESSION_COOKIE, cookieOptions);
-      throw new HttpError(401, "Not logged in");
-    }
-    res.json({ user: toJson(user) });
+  router.get("/me", requireAuth(config, store), (_req, res) => {
+    res.json({ user: toJson(currentUser(res)) });
   });
 
   return router;

@@ -34,15 +34,15 @@ export type Application = {
   updatedAt: Date;
 };
 
+// A complete record: the store has no defaults. src/newApplication.ts fills
+// in whatever a request left out.
 export type NewApplication = {
   company: string;
   role: string;
-  link?: string | null;
-  // Left out: the database default applies (APPLIED).
-  status?: Status;
-  // The route always fills this in (see src/today.ts).
-  appliedAt?: Date;
-  notes?: string | null;
+  link: string | null;
+  status: Status;
+  appliedAt: Date;
+  notes: string | null;
 };
 
 export type ApplicationChanges = Partial<NewApplication>;

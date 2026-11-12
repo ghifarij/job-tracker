@@ -18,9 +18,9 @@ const fakeVerifier: GoogleVerifier = async (idToken) => {
   return name ? { googleId: `google-${name}`, email: `${name}@example.com`, name } : null;
 };
 
-export function createTestApp() {
+export function createTestApp(configOverrides: Partial<Config> = {}) {
   return createApp({
-    config: testConfig,
+    config: { ...testConfig, ...configOverrides },
     store: createMemoryStore(),
     verifyGoogleToken: fakeVerifier,
   });
