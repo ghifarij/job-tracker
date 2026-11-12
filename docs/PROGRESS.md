@@ -5,7 +5,7 @@ Status legend: ⬜ todo · 🟡 in progress · ✅ done · ⛔ blocked
 ## Phase 0: Setup (11–14 Nov)
 - ✅ `CLAUDE.md`, README, docs written by Claude (2026-11-11)
 - ✅ `git init` (me), `.gitignore` + first commit (Claude, 2026-11-12)
-- ⬜ Push to `ghifarij/job-tracker` (me)
+- ✅ Push to `ghifarij/job-tracker` (me, 2026-11-12)
 
 ## Phase 1: Build (15–16 Nov)
 - ✅ Decide the repo layout and how Express runs on Vercel (J8, J9; 2026-11-12)
@@ -13,7 +13,7 @@ Status legend: ⬜ todo · 🟡 in progress · ✅ done · ⛔ blocked
 - ✅ Decide how login works across the two domains, the database access and validation (J10–J12; 2026-11-12). Reviewed RekJobs' backend first: its Google login trusted `googleId`/`email` from the request body without verifying the token. Don't repeat that.
 - ✅ Decide the application fields and status values (J13, J14; 2026-11-12)
 - ⬜ Google OAuth client created in Google Cloud Console (me)
-- ⬜ Neon database created (me)
+- ✅ Neon project `solitary-salad-07888565` linked with `neon link` from `backend/` (2026-11-12). Pulled into `backend/.env.local`; `.neon` and `.env.local` are git-ignored by `backend/.gitignore`
 - ⬜ Google login + per-user data scoping
 - ⬜ Applications: add, edit, delete, list, filter by status
 - ⬜ Deployed to Vercel as two projects (Root Directory `frontend` and `backend`); environment variables set (me)
@@ -25,7 +25,9 @@ I chose to build the job-tracker backend now and leave Phase 0's Kancilink and o
 Build order, all by Claude: Prisma 7.10.1 (latest stable; npm `latest` is an 8.0 RC) with schema + first migration (J11, J13) → Google ID-token verification → JWT in an `httpOnly` cookie + auth middleware (J10) → zod validation + error handler (J12) → applications CRUD + filter by status, scoped to the user → tests.
 
 Environment variable names (I set the values myself):
-- `backend/.env`: `DATABASE_URL` (Neon pooled), `DIRECT_URL` (Neon direct), `GOOGLE_CLIENT_ID`, `JWT_SECRET`
+- `backend/.env.local` (written by `neon link`): `DATABASE_URL` (pooled, for the app), `DATABASE_URL_UNPOOLED` (direct, for Prisma migrations). Uses Neon's `production` branch for now
+- `backend/.env` (I set these): `GOOGLE_CLIENT_ID`, `JWT_SECRET`
+- The backend and `prisma.config.ts` load both files
 - `frontend/.env.local`: `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `BACKEND_URL` (`http://localhost:4000` locally; the rewrite target)
 
 ## Later (outside the timebox)
