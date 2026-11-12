@@ -15,6 +15,12 @@ export function createPrismaStore(prisma: PrismaClient): Store {
       return prisma.user.findUnique({ where: { id } });
     },
 
+    // The applications go too: the schema says `onDelete: Cascade`.
+    // deleteMany, not delete, so a user that is already gone is not an error.
+    async deleteUser(id) {
+      await prisma.user.deleteMany({ where: { id } });
+    },
+
     listApplications(userId, status) {
       return prisma.application.findMany({
         // `status: undefined` means "no status filter" to Prisma.

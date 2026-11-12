@@ -17,6 +17,7 @@ Status legend: ⬜ todo · 🟡 in progress · ✅ done · ⛔ blocked
 - 🟡 Google login + per-user data scoping: backend done (Claude, 2026-11-12); frontend not started
 - 🟡 Applications: add, edit, delete, list, filter by status: backend done (Claude, 2026-11-12); frontend not started
 - ✅ First migration applied with `npm run db:deploy` (me, 2026-11-12). Claude then ran the real Prisma queries once against Neon with two throwaway users (create, list, filter, update, delete, cross-user access refused) and deleted them
+- 🟡 Delete my account (J24): backend done (Claude, 2026-11-12); the button with its "are you sure?" dialog comes with the frontend
 - ⬜ Deployed to Vercel as two projects (Root Directory `frontend` and `backend`); environment variables set (me)
 - ⬜ README final pass with the live link
 
@@ -27,6 +28,7 @@ API, all under `/api` (the frontend rewrite keeps the path unchanged):
 - `POST /api/auth/google` `{ credential }` → sets the `session` cookie, returns `{ user }`
 - `POST /api/auth/logout` → 204
 - `GET /api/auth/me` → `{ user }` or 401
+- `DELETE /api/auth/me` → 204; deletes the account and all its applications (J24)
 - `GET /api/applications?status=` → `{ applications }`, newest `appliedAt` first
 - `POST /api/applications` → 201 `{ application }`
 - `GET | PATCH | DELETE /api/applications/:id`
@@ -48,7 +50,7 @@ Reviewed the backend before starting the frontend; I picked candidates 1 and 2 (
 - Not done, on purpose: writing the JSON shapes down in one types file (candidate 3; worth doing when the frontend starts) and running the store tests against Postgres (candidate 4; contradicts J20)
 
 ## Next session: build the frontend
-Login page with the Google button → rewrite `/api/*` to `BACKEND_URL` → applications list with status filter → add / edit / delete forms.
+Login page with the Google button → rewrite `/api/*` to `BACKEND_URL` → applications list with status filter → add / edit / delete forms → "Delete my account" button with a confirm dialog.
 
 ## Later (outside the timebox)
 - ⬜ Auto-import applications from LinkedIn, Glints, Indeed, JobStreet (likely by reading their "application sent" emails; see J14)

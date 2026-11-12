@@ -5,7 +5,7 @@ import type { Application, Store, User } from "../store.js";
 // database. It follows the same rules as src/prismaStore.ts: newest first,
 // and every lookup matched on userId.
 export function createMemoryStore(): Store {
-  const users: User[] = [];
+  let users: User[] = [];
   let applications: Application[] = [];
 
   const find = (userId: string, id: string) =>
@@ -26,6 +26,12 @@ export function createMemoryStore(): Store {
 
     async findUser(id) {
       return users.find((u) => u.id === id) ?? null;
+    },
+
+    async deleteUser(id) {
+      users = users.filter((u) => u.id !== id);
+      // What `onDelete: Cascade` does in Postgres.
+      applications = applications.filter((a) => a.userId !== id);
     },
 
     async listApplications(userId, status) {

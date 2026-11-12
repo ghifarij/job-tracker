@@ -145,6 +145,56 @@ describe("POST /api/auth/logout", () => {
   });
 });
 
+describe("DELETE /api/auth/me", () => {
+  it("is 401 without a cookie", async () => {
+    await request(createTestApp()).delete("/api/auth/me").expect(401);
+  });
+
+  it("deletes the account and ends the session", async () => {
+    const ana = await loginAs(createTestApp(), "ana");
+
+    await ana.delete("/api/auth/me").expect(204);
+
+    await ana.get("/api/auth/me").expect(401);
+  });
+
+  it("deletes the user's applications: a new login starts empty", async () => {
+    const app = createTestApp();
+    const ana = await loginAs(app, "ana");
+    await ana.post("/api/applications").send({ company: "Tokopedia", role: "SRE" }).expect(201);
+    const oldId = (await ana.get("/api/auth/me")).body.user.id;
+
+    await ana.delete("/api/auth/me").expect(204);
+
+    const again = await loginAs(app, "ana");
+    expect((await again.get("/api/auth/me")).body.user.id).not.toBe(oldId);
+    expect((await again.get("/api/applications")).body.applications).toEqual([]);
+  });
+
+  it("leaves other users alone", async () => {
+    const app = createTestApp();
+    const ana = await loginAs(app, "ana");
+    const budi = await loginAs(app, "budi");
+    await budi.post("/api/applications").send({ company: "Gojek", role: "SRE" }).expect(201);
+
+    await ana.delete("/api/auth/me").expect(204);
+
+    expect((await budi.get("/api/applications")).body.applications).toHaveLength(1);
+  });
+
+  it("ends the session on other browsers too", async () => {
+    const app = createTestApp();
+    const laptop = await loginAs(app, "ana");
+    const phone = await loginAs(app, "ana");
+
+    await laptop.delete("/api/auth/me").expect(204);
+
+    // The phone's cookie is still correctly signed, but its user is gone.
+    await phone.get("/api/applications").expect(401);
+    await phone.post("/api/applications").send({ company: "X", role: "Y" }).expect(401);
+  });
+});
+
 describe("loadConfig", () => {
   it("turns Secure cookies on in production only", () => {
     const env = { DATABASE_URL: "x", GOOGLE_CLIENT_ID: "x", JWT_SECRET: testConfig.jwtSecret };

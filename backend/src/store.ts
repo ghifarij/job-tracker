@@ -51,6 +51,8 @@ export type Store = {
   // Creates the user on first login; refreshes email and name after that.
   upsertUser(profile: GoogleProfile): Promise<User>;
   findUser(id: string): Promise<User | null>;
+  // Deletes the user and, with them, all their applications (J24).
+  deleteUser(id: string): Promise<void>;
 
   listApplications(userId: string, status?: Status): Promise<Application[]>;
   getApplication(userId: string, id: string): Promise<Application | null>;

@@ -47,5 +47,13 @@ export function authRouter({ config, store, verifyGoogleToken }: AppDeps): Route
     res.json({ user: toJson(currentUser(res)) });
   });
 
+  // Delete my account (J24): the user and all their applications. The
+  // frontend asks "are you sure?" before calling this.
+  router.delete("/me", requireAuth(config, store), async (_req, res) => {
+    await store.deleteUser(currentUser(res).id);
+    res.clearCookie(SESSION_COOKIE, cookieOptions);
+    res.status(204).end();
+  });
+
   return router;
 }
