@@ -1,26 +1,247 @@
 @import "tailwindcss";
 
+/* The look: airmail. An application is a letter you send and then wait on, so
+   the palette is the envelope's: cool paper, navy ink, and the red of the
+   border stripe. Red is kept for "Rejected" and for deleting. */
+@theme {
+  --color-paper: #eaeef8;
+  --color-sheet: #ffffff;
+  --color-ink: #16204a;
+  --color-muted: #56608a;
+  --color-line: #cdd4e8;
+  --color-red: #c1271d;
+  --color-blue: #1f4fd8;
+  --color-green: #1a6f45;
+  --color-ghost: #646b89;
+
+  --font-sans: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+}
+
+@layer components {
+  /* The border of an airmail envelope. Used once per screen, at the top. */
+  .airmail-stripe {
+    height: 10px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--color-red) 0 14px,
+      var(--color-sheet) 14px 24px,
+      var(--color-ink) 24px 38px,
+      var(--color-sheet) 38px 48px
+    );
+  }
+
+  /* Headings and company names use the typeface's narrow width. */
+  .display {
+    font-stretch: 80%;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: 0 1rem;
+    border: 1.5px solid var(--color-ink);
+    border-radius: 0.375rem;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--color-ink);
+    background: transparent;
+    cursor: pointer;
+  }
+  .btn:hover {
+    background: color-mix(in srgb, var(--color-ink) 8%, transparent);
+  }
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+  .btn-primary {
+    background: var(--color-ink);
+    color: var(--color-sheet);
+  }
+  .btn-primary:hover {
+    background: color-mix(in srgb, var(--color-ink) 86%, var(--color-sheet));
+  }
+  .btn-danger {
+    border-color: var(--color-red);
+    background: var(--color-red);
+    color: var(--color-sheet);
+  }
+  .btn-danger:hover {
+    background: color-mix(in srgb, var(--color-red) 86%, var(--color-ink));
+  }
+
+  /* A text-only action: Sign out, Edit, Delete. */
+  .link-btn {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .link-btn:hover {
+    text-decoration-thickness: 2.5px;
+  }
+  .link-btn-danger {
+    color: var(--color-red);
+  }
+
+  /* A symbol-only action: the × that closes Settings. */
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.375rem;
+    font-size: 1.75rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .icon-btn:hover {
+    background: color-mix(in srgb, var(--color-ink) 8%, transparent);
+  }
+
+  .field {
+    display: grid;
+    gap: 0.375rem;
+  }
+  .field-label {
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+  .field-hint {
+    font-weight: 400;
+    color: var(--color-muted);
+  }
+  .field-input {
+    width: 100%;
+    min-height: 2.625rem;
+    padding: 0.5rem 0.75rem;
+    border: 1.5px solid var(--color-line);
+    border-radius: 0.375rem;
+    background: var(--color-sheet);
+    color: var(--color-ink);
+    font: inherit;
+  }
+  .field-input:hover {
+    border-color: var(--color-muted);
+  }
+  .field-input[aria-invalid="true"] {
+    border-color: var(--color-red);
+  }
+  .field-error {
+    font-size: 0.875rem;
+    color: var(--color-red);
+  }
+
+  /* The status of one application. In the list it is a <select>, so the
+     status can be changed right there. */
+  .status {
+    --status: var(--color-blue);
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    padding: 0 0.75rem;
+    border: 1.5px solid var(--status);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--status) 9%, var(--color-sheet));
+    color: var(--status);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+  .status[data-status="INTERVIEWED"] {
+    --status: var(--color-green);
+  }
+  .status[data-status="REJECTED"] {
+    --status: var(--color-red);
+  }
+  .status[data-status="GHOSTED"] {
+    --status: var(--color-ghost);
+    border-style: dashed;
+  }
+  select.status {
+    appearance: none;
+    padding-right: 1.75rem;
+    cursor: pointer;
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+      linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position:
+      calc(100% - 0.95rem) 55%,
+      calc(100% - 0.65rem) 55%;
+    background-size: 0.3rem 0.3rem;
+    background-repeat: no-repeat;
+  }
+  select.status:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .modal {
+    margin: auto;
+    width: min(34rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    padding: 0;
+    border: 0;
+    border-radius: 0.5rem;
+    background: var(--color-sheet);
+    color: var(--color-ink);
+    overflow: auto;
+    box-shadow: 0 24px 60px -12px color-mix(in srgb, var(--color-ink) 45%, transparent);
+  }
+  .modal::backdrop {
+    background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  }
+
+  /* The same dialog, docked to the right edge at full height. */
+  .modal.drawer {
+    margin: 0 0 0 auto;
+    width: min(24rem, calc(100vw - 2.5rem));
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .modal[open] {
+    animation: modal-in 140ms ease-out;
+  }
+  @keyframes modal-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+  .modal.drawer[open] {
+    animation: drawer-in 180ms ease-out;
+  }
+  @keyframes drawer-in {
+    from {
+      transform: translateX(100%);
+    }
+  }
 }
