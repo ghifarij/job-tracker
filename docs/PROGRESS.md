@@ -14,21 +14,34 @@ Status legend: ⬜ todo · 🟡 in progress · ✅ done · ⛔ blocked
 - ✅ Decide the application fields and status values (J13, J14; 2026-11-12)
 - ⬜ Google OAuth client created in Google Cloud Console (me)
 - ✅ Neon project `solitary-salad-07888565` linked with `neon link` from `backend/` (2026-11-12). Pulled into `backend/.env.local`; `.neon` and `.env.local` are git-ignored by `backend/.gitignore`
-- ⬜ Google login + per-user data scoping
-- ⬜ Applications: add, edit, delete, list, filter by status
+- 🟡 Google login + per-user data scoping: backend done (Claude, 2026-11-12); frontend not started
+- 🟡 Applications: add, edit, delete, list, filter by status: backend done (Claude, 2026-11-12); frontend not started
+- ✅ First migration applied with `npm run db:deploy` (me, 2026-11-12). Claude then ran the real Prisma queries once against Neon with two throwaway users (create, list, filter, update, delete, cross-user access refused) and deleted them
 - ⬜ Deployed to Vercel as two projects (Root Directory `frontend` and `backend`); environment variables set (me)
 - ⬜ README final pass with the live link
 
-## Next session: build the backend (handoff, 2026-11-12)
-I chose to build the job-tracker backend now and leave Phase 0's Kancilink and ops-drills tasks for later.
+## Backend build (Claude, 2026-11-12)
+Built in the order of the handoff: Prisma schema + first migration → Google ID-token verification → JWT cookie + auth middleware → zod validation + error handler → applications CRUD + status filter → 42 tests (`npm test`, no database needed).
 
-Build order, all by Claude: Prisma 7.10.1 (latest stable; npm `latest` is an 8.0 RC) with schema + first migration (J11, J13) → Google ID-token verification → JWT in an `httpOnly` cookie + auth middleware (J10) → zod validation + error handler (J12) → applications CRUD + filter by status, scoped to the user → tests.
+API, all under `/api` (the frontend rewrite keeps the path unchanged):
+- `POST /api/auth/google` `{ credential }` → sets the `session` cookie, returns `{ user }`
+- `POST /api/auth/logout` → 204
+- `GET /api/auth/me` → `{ user }` or 401
+- `GET /api/applications?status=` → `{ applications }`, newest `appliedAt` first
+- `POST /api/applications` → 201 `{ application }`
+- `GET | PATCH | DELETE /api/applications/:id`
+- Errors: `{ error: { message, fields? } }`. Dates: `appliedAt` is `"YYYY-MM-DD"`
 
-Environment variable names (I set the values myself):
-- `backend/.env.local` (written by `neon link`): `DATABASE_URL` (pooled, for the app), `DATABASE_URL_UNPOOLED` (direct, for Prisma migrations). Uses Neon's `production` branch for now
-- `backend/.env` (I set these): `GOOGLE_CLIENT_ID`, `JWT_SECRET`
-- The backend and `prisma.config.ts` load both files
+Environment variables (I set the values myself):
+- `backend/.env.local` (written by `neon link`): `DATABASE_URL` (pooled, the app), `DATABASE_URL_UNPOOLED` (direct, Prisma CLI)
+- `backend/.env`: `GOOGLE_CLIENT_ID`, `JWT_SECRET` (32+ characters, or the app refuses to start)
+- Vercel backend project: `DATABASE_URL`, `GOOGLE_CLIENT_ID`, `JWT_SECRET`
 - `frontend/.env.local`: `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `BACKEND_URL` (`http://localhost:4000` locally; the rewrite target)
+
+The choices Claude made while building were confirmed or changed by me on 2026-11-12: J15–J21 in `DECISIONS.md`.
+
+## Next session: build the frontend
+Login page with the Google button → rewrite `/api/*` to `BACKEND_URL` → applications list with status filter → add / edit / delete forms.
 
 ## Later (outside the timebox)
 - ⬜ Auto-import applications from LinkedIn, Glints, Indeed, JobStreet (likely by reading their "application sent" emails; see J14)
